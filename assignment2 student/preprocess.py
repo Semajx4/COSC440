@@ -48,7 +48,7 @@ def pre_process_data(inputs, labels, first_class, second_class):
 	for i in range(initial_length):
 		image, label = inputs[i], labels[i]
 		if label == first_class or label == second_class:
-			filtered_inputs.append(image)
+			filtered_inputs.append(image/255)
 			filtered_labels.append(label)
 
 	inputs = np.array(filtered_inputs)
