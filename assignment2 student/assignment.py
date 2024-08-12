@@ -7,7 +7,6 @@ import os
 import tensorflow as tf
 
 print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
-
 import numpy as np
 import random
 
@@ -63,7 +62,7 @@ def loss(logits, labels):
     :param labels: during training, matrix of shape (batch_size, self.num_classes) containing the train labels
     :return: the loss of the model as a Tensor
     """
-    return tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels, logits))
+    return tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=labels, logits=logits))
 
 
 def accuracy(logits, labels):
@@ -94,27 +93,21 @@ def train(model, train_inputs, train_labels):
     shape (num_labels, num_classes)
     :return: None
     """
-    indices = tf.random.shuffle(np.arange(0, len(train_inputs)))  # Shuffle the indices
+    indices = tf.range(start=0, limit=len(train_inputs), dtype=tf.int32)
+    indices = tf.random.shuffle(indices)
     inputs = tf.gather(train_inputs, indices)
     labels = tf.gather(train_labels, indices)
 
-    # Iterate over the data in batches
     for start in range(0, len(inputs), model.batch_size):
         end = start + model.batch_size
         batch_inputs = inputs[start:end]
         batch_labels = labels[start:end]
 
         with tf.GradientTape() as tape:
-            # Forward pass: compute the logits
             logits = model.call(batch_inputs)
-
-            # Compute the loss
             loss_value = loss(logits, batch_labels)
 
-        # Compute gradients
         gradients = tape.gradient(loss_value, model.trainable_variables)
-
-        # Apply gradients to update the weights
         model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
 
@@ -181,17 +174,17 @@ def main(cifar10_data_folder):
     test_inputs, test_labels = get_data(cifar10_data_folder + "test", FIRST_CLASS, SECOND_CLASS)
     for epoch in range(EPOCHS):
         train(model, train_inputs, train_labels)
-        accuracy = test(model, train_inputs, train_labels)
+        accur = test(model, train_inputs, train_labels)
         logits = model.call(train_inputs)
         epoch_loss = loss(logits, train_labels)
-        #print(f"{epoch+1} accuracy={accuracy * 100:.0f}% loss: {epoch_loss}")
+        print(f"{epoch + 1} accuracy={accur * 100:.0f}% loss: {epoch_loss}")
     print(f"Test result accuracy: {test(model, test_inputs, test_labels) * 100:.0f}%")
-
-    #visualize_results(test_inputs[:10], model.call(test_inputs)[:10], test_labels[:10], FIRST_CLASS, SECOND_CLASS)
+    #visualize_results(test_inputs[1:10], model.call(test_inputs[1:10]), test_labels[1:10], FIRST_CLASS, SECOND_CLASS)
     return
 
 
 if __name__ == '__main__':
     cifar_data_folder = 'CIFAR_data/'
-    for i in range(10):
+    for i in range(1):
+        print(i)
         main(cifar_data_folder)

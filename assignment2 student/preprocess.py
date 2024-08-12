@@ -42,20 +42,13 @@ def pre_process_data(inputs, labels, first_class, second_class):
 	has size (num_examples, num_classes)
 	"""
 
-	initial_length = len(inputs)
-	filtered_inputs = []
-	filtered_labels = []
-	for i in range(initial_length):
-		image, label = inputs[i], labels[i]
-		if label == first_class or label == second_class:
-			filtered_inputs.append(image/255)
-			filtered_labels.append(label)
-
-	inputs = np.array(filtered_inputs)
-	inputs = np.reshape(inputs, (-1, 3, 32, 32))
-	labels = tf.one_hot(filtered_labels, depth=2)
-	inputs = inputs.astype(np.float32)
-	return inputs, labels
+	mask = np.logical_or(labels == first_class, labels == second_class)
+	selected_inputs = inputs[mask]
+	selected_labels = labels[mask]
+	normalized_inputs = selected_inputs.astype(np.float32) / 255.0
+	selected_labels = np.where(selected_labels == first_class, 0, 1)
+	one_hot_labels = tf.one_hot(selected_labels, depth=2)
+	return normalized_inputs, one_hot_labels
 
 
 def get_data(file_path, first_class, second_class):
