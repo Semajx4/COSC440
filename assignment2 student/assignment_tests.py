@@ -7,12 +7,12 @@ class TestAssignment2(unittest.TestCase):
         np.testing.assert_almost_equal(arr1, arr2, decimal=5, err_msg='', verbose=True)
 
     def test_same_0(self):
-        '''
+        """
         Simple test using SAME padding to check out differences between
         own convolution function and TensorFlow's convolution function.
 
         NOTE: DO NOT EDIT
-        '''
+        """
         imgs = np.array([[2, 2, 3, 3, 3], [0, 1, 3, 0, 3], [2, 3, 0, 1, 3], [3, 3, 2, 1, 2], [3, 3, 0, 2, 3]],
                         dtype=np.float32)
         imgs = np.reshape(imgs, (1, 5, 5, 1))
@@ -25,12 +25,13 @@ class TestAssignment2(unittest.TestCase):
         self.assertSequenceEqual(my_conv[0][0][0], tf_conv[0][0][0].numpy())
 
     def test_valid_0(self):
-        '''
+
+        """
         Simple test using VALID padding to check out differences between
         own convolution function and TensorFlow's convolution function.
 
         NOTE: DO NOT EDIT
-        '''
+        """
         imgs = np.array([[2, 2, 3, 3, 3], [0, 1, 3, 0, 3], [2, 3, 0, 1, 3], [3, 3, 2, 1, 2], [3, 3, 0, 2, 3]],
                         dtype=np.float32)
         imgs = np.reshape(imgs, (1, 5, 5, 1))

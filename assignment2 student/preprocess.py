@@ -3,6 +3,7 @@ import numpy as np
 import tensorflow as tf
 import os
 
+
 def unpickle(file):
 	"""
 	CIFAR data contains the files data_batch_1, data_batch_2, ...,
@@ -20,6 +21,7 @@ def unpickle(file):
 		dict = pickle.load(fo, encoding='bytes')
 	return dict
 
+
 def pre_process_data(inputs, labels, first_class, second_class):
 	"""
 	Given two ndarrays of inputs and labels and two target classes, returns an array of
@@ -31,18 +33,30 @@ def pre_process_data(inputs, labels, first_class, second_class):
 	Note that because you are using tf.one_hot() for your labels, your
 	labels will be a Tensor, while your inputs will be a NumPy array. This
 	is fine because TensorFlow works with NumPy arrays.
-	:param file_path: file path for inputs and labels, something
-	like 'CIFAR_data_compressed/train'
 	:param first_class:  an integer (0-9) representing the first target
 	class in the CIFAR10 dataset, for a cat, this would be a 3
-	:param first_class:  an integer (0-9) representing the second target
+	:param second_class:  an integer (0-9) representing the second target
 	class in the CIFAR10 dataset, for a dog, this would be a 5
 	:return: normalized NumPy array of inputs and tensor of labels, where
 	inputs are of type np.float32 and has size (num_inputs, width, height, num_channels) and labels
 	has size (num_examples, num_classes)
 	"""
-	# TODO: Do the preprocessing!
-	pass
+
+	initial_length = len(inputs)
+	filtered_inputs = []
+	filtered_labels = []
+	for i in range(initial_length):
+		image, label = inputs[i], labels[i]
+		if label == first_class or label == second_class:
+			filtered_inputs.append(image)
+			filtered_labels.append(label)
+
+	inputs = np.array(filtered_inputs)
+	inputs = np.reshape(inputs, (-1, 3, 32, 32))
+	labels = tf.one_hot(filtered_labels, depth=2)
+	inputs = inputs.astype(np.float32)
+	return inputs, labels
+
 
 def get_data(file_path, first_class, second_class):
 	"""
@@ -53,7 +67,7 @@ def get_data(file_path, first_class, second_class):
 	like 'CIFAR_data_compressed/train'
 	:param first_class:  an integer (0-9) representing the first target
 	class in the CIFAR10 dataset, for a cat, this would be a 3
-	:param first_class:  an integer (0-9) representing the second target
+	:param second_class:  an integer (0-9) representing the second target
 	class in the CIFAR10 dataset, for a dog, this would be a 5
 	:return: normalized NumPy array of inputs and tensor of labels, where
 	inputs are of type np.float32 and has size (num_inputs, width, height, num_channels) and labels
@@ -63,3 +77,5 @@ def get_data(file_path, first_class, second_class):
 	inputs = unpickled_file[b'data']
 	labels = unpickled_file[b'labels']
 	return pre_process_data(inputs, labels, first_class, second_class)
+
+
