@@ -115,33 +115,43 @@ class ModelPart3:
 		self.num_classes = 2
 		self.optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3)
 
-		input = 6728
+		input = 32768
 		output = self.num_classes
-		middle_output = 64
-		self.filters = tf.Variable(tf.random.truncated_normal([4, 4, 3, 8],
+		middle_output = 32
+		middle_output2 = 64
+		self.filters = tf.Variable(tf.random.truncated_normal([3, 3, 3, 32],
 		                                                 dtype=tf.float32,
 		                                                 stddev=1e-1),
 		                      name="filters")
 
-		self.W1 = tf.Variable(tf.random.truncated_normal([input, middle_output],
+		self.W1 = tf.Variable(tf.random.truncated_normal([input, middle_output2],
 		                                                 dtype=tf.float32,
 		                                                 stddev=0.1),
 		                      name="W1")
-		self.B1 = tf.Variable(tf.random.truncated_normal([1, middle_output],
+		self.B1 = tf.Variable(tf.random.truncated_normal([1, middle_output2],
 		                                                 dtype=tf.float32,
 		                                                 stddev=0.1),
 		                      name="B1")
 
-		self.W2 = tf.Variable(tf.random.truncated_normal([middle_output, output],
+		self.W2 = tf.Variable(tf.random.truncated_normal([middle_output2, middle_output],
 		                                                 dtype=tf.float32,
 		                                                 stddev=0.1),
 		                      name="W2")
-		self.B2 = tf.Variable(tf.random.truncated_normal([1, output],
+		self.B2 = tf.Variable(tf.random.truncated_normal([1, middle_output],
 		                                                 dtype=tf.float32,
 		                                                 stddev=0.1),
 		                      name="B2")
 
-		self.trainable_variables = [self.W1, self.B1, self.W2, self.B2]
+		self.W3 = tf.Variable(tf.random.truncated_normal([middle_output, output],
+		                                                 dtype=tf.float32,
+		                                                 stddev=0.1),
+		                      name="W3")
+		self.B3 = tf.Variable(tf.random.truncated_normal([1, output],
+		                                                 dtype=tf.float32,
+		                                                 stddev=0.1),
+		                      name="B3")
+
+		self.trainable_variables = [self.W1, self.B1, self.W2, self.B2, self.W3, self.B3, self.filters]
 
 	def call(self, inputs):
 		"""
@@ -154,15 +164,18 @@ class ModelPart3:
 
 
 		#first layer -> convolution and relu
-		inputs = tf.nn.relu(tf.nn.conv2d(inputs, self.filters, [1, 1, 1, 1], padding='VALID'))
+		inp = tf.nn.conv2d(inputs, self.filters, [1, 1, 1, 1], padding='SAME')
+		inputs = tf.nn.relu(inp)
 
-		inputs = tf.reshape(inputs, [inputs.shape[0], -1])
+		inputs = tf.reshape(inputs, [tf.shape(inputs)[0], -1])
 
 		# second layer: Linear + ReLU activation
-		x = tf.nn.relu(tf.matmul(inputs, self.W1) + self.B1)
+		l1 = tf.nn.relu(tf.matmul(inputs, self.W1) + self.B1)
 
 		# Output layer: Linear transformation
-		logits = tf.matmul(x, self.W2) + self.B2
+		l2 = tf.nn.relu(tf.matmul(l1, self.W2) + self.B2)
+
+		logits = tf.matmul(l2, self.W3) + self.B3
 		return logits
 
 def loss(logits, labels):
