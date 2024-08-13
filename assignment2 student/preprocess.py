@@ -41,11 +41,13 @@ def pre_process_data(inputs, labels, first_class, second_class):
 	inputs are of type np.float32 and has size (num_inputs, width, height, num_channels) and labels
 	has size (num_examples, num_classes)
 	"""
-
+	image_shape = [32, 32, 3]
 	mask = np.logical_or(labels == first_class, labels == second_class)
 	selected_inputs = inputs[mask]
 	selected_labels = labels[mask]
-	normalized_inputs = selected_inputs.astype(np.float32) / 255.0
+	reshaped_inputs = selected_inputs.reshape(-1, *image_shape)
+	# Normalize the input images to be in the range [0, 1]
+	normalized_inputs = reshaped_inputs.astype(np.float32) / 255.0
 	selected_labels = np.where(selected_labels == first_class, 0, 1)
 	one_hot_labels = tf.one_hot(selected_labels, depth=2)
 	return normalized_inputs, one_hot_labels
