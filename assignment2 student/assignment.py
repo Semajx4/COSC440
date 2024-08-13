@@ -113,16 +113,20 @@ class ModelPart3:
         """
 		self.batch_size = 64
 		self.num_classes = 2
-		self.optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3)
+		self.optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4)
 
-		input = 32768
+		input = 65536
 		output = self.num_classes
 		middle_output = 32
-		middle_output2 = 64
-		self.filters = tf.Variable(tf.random.truncated_normal([3, 3, 3, 32],
+		middle_output2 = 256
+		self.l1filters = tf.Variable(tf.random.truncated_normal([3, 3, 3, 64],
 		                                                 dtype=tf.float32,
 		                                                 stddev=1e-1),
-		                      name="filters")
+		                      name="l1filters")
+		self.l2filters = tf.Variable(tf.random.truncated_normal([3, 3, 64, 64],
+		                                                        dtype=tf.float32,
+		                                                        stddev=1e-1),
+		                             name="l1filters")
 
 		self.W1 = tf.Variable(tf.random.truncated_normal([input, middle_output2],
 		                                                 dtype=tf.float32,
@@ -151,7 +155,7 @@ class ModelPart3:
 		                                                 stddev=0.1),
 		                      name="B3")
 
-		self.trainable_variables = [self.W1, self.B1, self.W2, self.B2, self.W3, self.B3, self.filters]
+		self.trainable_variables = [self.W1, self.B1, self.W2, self.B2, self.W3, self.B3, self.l1filters, self.l2filters]
 
 	def call(self, inputs):
 		"""
@@ -164,18 +168,19 @@ class ModelPart3:
 
 
 		#first layer -> convolution and relu
-		inp = tf.nn.conv2d(inputs, self.filters, [1, 1, 1, 1], padding='SAME')
-		inputs = tf.nn.relu(inp)
-
-		inputs = tf.reshape(inputs, [tf.shape(inputs)[0], -1])
+		l1 = tf.nn.relu(tf.nn.conv2d(inputs, self.l1filters, [1, 1, 1, 1], padding='SAME'))
+		l2 = tf.nn.relu(tf.nn.conv2d(l1, self.l2filters, [1, 1, 1, 1], padding='SAME'))
+		pooled_inputs = tf.nn.max_pool2d (l2,ksize=(2, 2), strides=(1, 1),
+		                                  padding="SAME")
+		inputs = tf.reshape(l2, [tf.shape(pooled_inputs)[0], -1])
 
 		# second layer: Linear + ReLU activation
-		l1 = tf.nn.relu(tf.matmul(inputs, self.W1) + self.B1)
+		l3 = tf.nn.relu(tf.matmul(inputs, self.W1) + self.B1)
 
 		# Output layer: Linear transformation
-		l2 = tf.nn.relu(tf.matmul(l1, self.W2) + self.B2)
+		l4 = tf.matmul(l3, self.W2) + self.B2
 
-		logits = tf.matmul(l2, self.W3) + self.B3
+		logits = linear_unit(l4, self.W3, self.B3)
 		return logits
 
 def loss(logits, labels):
